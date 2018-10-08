@@ -5,7 +5,10 @@ from optparse import OptionParser, OptionError
 import subprocess
 import os
 import re
-import ConfigParser
+try:
+    import configparser
+except:
+    import ConfigParser as configparser
 import getpass
 import OpenSSL
 import datetime
@@ -13,8 +16,15 @@ import glob
 import logging
 
 # Declare variables
-mirror_dir = '/mirror/upstream'
-confd_dir = '/etc/upstream_sync'
+if "MIRROR_DIR" not in os.environ:
+    mirror_dir = '/mirror/upstream'
+else:
+    mirror_dir = os.environ["MIRROR_DIR"]
+
+if "CONFD_DIR" not in os.environ:
+    confd_dir = '/etc/upstream_sync'
+else:
+    confd_dir = os.environ["CONFD_DIR"]
 
 # directory that contains authentication credentials for sles
 sles_auth_cred_dir = '/etc/nccs/sles_mirror'
@@ -39,7 +49,7 @@ def make_dir(dir_path, mode=None):
             else:
                 os.makedirs(dir_path)
         except OSError as e:
-            print e
+            print (e)
             sys.exit(1)
 
 
@@ -77,8 +87,8 @@ def build_yum_config(name, url, sslcacert, sslcert, sslkey, exclude):
 def check_sslcert_expiration(sslcert):
     """checks to see if the ssl cert is going to expire soon"""
     try:
-        cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, file(sslcert).read())
-        cert_expires = datetime.datetime.strptime(cert.get_notAfter(), "%Y%m%d%H%M%SZ")
+        cert = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, open(sslcert).read())
+        cert_expires = datetime.datetime.strptime(cert.get_notAfter().decode('utf-8'), "%Y%m%d%H%M%SZ")
     except IOError:
         return
 
@@ -92,7 +102,7 @@ def check_sslcert_expiration(sslcert):
 
 def parse_config_auth():
     """ returns dictionary of authentication keys """
-    config = ConfigParser.ConfigParser()
+    config = configparser.ConfigParser()
     config.read(os.path.join(confd_dir, 'auth.conf'))
 
     auths = dict()
@@ -115,7 +125,7 @@ def config_repos(rfilter=None):
         'copylinks': 'False',
         'exclude': '',
     }
-    config = ConfigParser.ConfigParser(defaults)
+    config = configparser.ConfigParser(defaults)
     config.read(glob.glob(os.path.join(confd_dir, '*.repo')))
 
     auths = parse_config_auth()
@@ -129,7 +139,7 @@ def config_repos(rfilter=None):
         repo = dict(config.items(title))
         repo['name'] = title
         repo['path'] = os.path.join(mirror_dir, repo['path'])  # absolute path of repository
-        if repo.has_key('auth'):
+        if "auth" in repo:
             repo['auth'] = auths[repo['auth']]
         repos.append(repo)
 
@@ -139,7 +149,7 @@ def config_repos(rfilter=None):
 
 def list_repos(repos):
     for repo in repos:
-        print repo['name']
+        print(repo['name'])
 
 
 def sync_cmd_reposync(repo):
@@ -154,13 +164,13 @@ def sync_cmd_reposync(repo):
     url = repo['url']
     path = repo['path']
 
-    if repo.has_key('auth'):
+    if 'auth' in repo:
         auth = repo['auth']
         sslcacert = auth['sslcacert']
         sslcert = auth['sslcert']
         sslkey = auth['sslkey']
 
-    if repo.has_key('exclude'):
+    if 'exclude' in repo:
         exclude_list = repo['exclude'].split(',')
         # split() will return an empty list element
         if exclude_list:
@@ -191,7 +201,7 @@ def sync_cmd_reposync(repo):
         logging.warn('unable to detect architecture for %s' % name)
 
     # build options
-    if repo.has_key('sync_opts'):
+    if 'sync_opts' in repo:
         opt_list = repo['sync_opts'].split()
         for opt in opt_list:
             reposync_opts.append(opt)
@@ -240,7 +250,7 @@ def sync_cmd_rsync(repo):
 
     rsync_opts = []
     # build options
-    if repo.has_key('sync_opts'):
+    if 'sync_opts' in repo:
         opt_list = repo['sync_opts'].split()
         for opt in opt_list:
             rsync_opts.append(opt)
@@ -341,7 +351,7 @@ def main():
 
         # create repo directory
         if not show_command:
-            make_dir(path, 0775)
+            make_dir(path, mode=0o0775)
 
         createrepo = False
         if repo['createrepo'].lower() == "true":
