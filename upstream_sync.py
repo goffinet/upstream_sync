@@ -14,6 +14,8 @@ import OpenSSL
 import datetime
 import glob
 import logging
+# so we can know how many cores we have in system
+import multiprocessing
 
 # Declare variables
 if "MIRROR_DIR" not in os.environ:
@@ -359,7 +361,7 @@ def main():
 
         # Generate the sync and createrepo commands to be used based on repository type
         createrepo_exec = ['createrepo']
-        createrepo_opts = ['--pretty', '--database', '--update', '--cachedir', '--workers 4', os.path.join(path, '.cache'), path]
+        createrepo_opts = ['--pretty', '--database', '--update', '--cachedir', '--workers {}' % multiprocessing.cpu_count(), os.path.join(path, '.cache'), path]
         if not options.verbose:
             createrepo_opts.append('-q')
 
