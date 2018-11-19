@@ -361,7 +361,7 @@ def main():
 
         # Generate the sync and createrepo commands to be used based on repository type
         createrepo_exec = ['createrepo']
-        createrepo_opts = ['--pretty', '--database', '--update', '--cachedir', '--workers {}' % multiprocessing.cpu_count(), os.path.join(path, '.cache'), path]
+        createrepo_opts = ['--pretty', '--database', '--update', '--cachedir', '--workers %s' % multiprocessing.cpu_count(), os.path.join(path, '.cache'), path]
         if not options.verbose:
             createrepo_opts.append('-q')
 
