@@ -16,6 +16,8 @@ import glob
 import logging
 # so we can know how many cores we have in system
 import multiprocessing
+import gzip
+import shutil
 
 # Declare variables
 if "MIRROR_DIR" not in os.environ:
@@ -27,6 +29,16 @@ if "CONFD_DIR" not in os.environ:
     confd_dir = '/etc/upstream_sync'
 else:
     confd_dir = os.environ["CONFD_DIR"]
+
+if "CREATEREPO_CMD" not in os.environ:
+    createrepo_exec = ['createrepo']
+else:
+    createrepo_exec = [os.environ["CREATEREPO_CMD"]]
+
+if "MODIFYREPO_CMD" not in os.environ:
+    modifyrepo_exec = ['modifyrepo']
+else:
+    modifyrepo_exec = [os.environ["MODIFYREPO_CMD"]]
 
 # directory that contains authentication credentials for sles
 sles_auth_cred_dir = '/etc/nccs/sles_mirror'
@@ -360,10 +372,12 @@ def main():
             createrepo = True
 
         # Generate the sync and createrepo commands to be used based on repository type
-        createrepo_exec = ['createrepo']
-        createrepo_opts = ['--pretty', '--database', '--update', '--cachedir', '--workers %s' % multiprocessing.cpu_count(), os.path.join(path, '.cache'), path]
+        createrepo_opts = ['--pretty', '--database', '--update', '--workers=%s' % multiprocessing.cpu_count(), '--cachedir',  os.path.join(path, '.cache'), path]
         if not options.verbose:
             createrepo_opts.append('-q')
+
+        # Update repository with updateinfo fetched from upstream if it exists
+        modifyrepo_opts = [ os.path.join(path,'updateinfo.xml'), os.path.join(path, 'repodata')]
 
         if re.match('^(http|https|ftp)://', url):
             sync_cmd = sync_cmd_reposync(repo)
@@ -386,6 +400,7 @@ def main():
             print('  '+' '.join(sync_cmd))
             if createrepo:
                 print('  '+' '.join(createrepo_exec + createrepo_opts))
+                print('  '+' '.join(modifyrepo_exec + modifyrepo_opts))
             continue
 
         # preform sync - rhnget/rsync
@@ -428,7 +443,22 @@ def main():
                     logging.warn(stdout)
                 logging.warn('createrepo failed: %s' % name)
 
+        updateinfos = glob.glob(os.path.join(path,"*updateinfo.xml.gz"))
+        if len (updateinfos) > 0:
+            try:
+                os.mkdir(os.path.join(path, 'archives-updateinfo'))
+            except Exception:
+                pass
 
+            for updateinfo in updateinfos:
+                with gzip.open(updateinfo, 'rb') as f_in, open(os.path.join(path,'updateinfo.xml'), 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+                os.rename(updateinfo, os.path.join(path, 'archives-updateinfo',os.path.basename(updateinfo)) )
+            modifyrepo_cmd = modifyrepo_exec + modifyrepo_opts
+            p2 = subprocess.Popen(modifyrepo_cmd, stdout=stdout_pipe, stderr=stderr_pipe, stdin=subprocess.PIPE)
+            p2_rc = p2.wait()
+            stdout, _ = p2.communicate()
+            os.remove(os.path.join(path,'updateinfo.xml'))
 if __name__ == "__main__":
     sys.exit(main())
 
