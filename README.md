@@ -102,6 +102,21 @@ export MIRROR_DIR="${destination_path}"
 upstream_sync.py -v
 ```
 
+du -h | repo
+--- | ---
+20M | /opt/mirror/upstream/centos/7/x86_64/ansible-29
+161M | /opt/mirror/upstream/centos/7/x86_64/centosplus
+102M | /opt/mirror/upstream/centos/7/x86_64/docker-ce-stable
+16G | /opt/mirror/upstream/centos/7/x86_64/epel
+322M | /opt/mirror/upstream/centos/7/x86_64/extras
+561M | /opt/mirror/upstream/centos/7/x86_64/mariadb-10.5
+9.0G | /opt/mirror/upstream/centos/7/x86_64/os
+16M | /opt/mirror/upstream/centos/7/x86_64/samba-411
+223M | /opt/mirror/upstream/centos/7/x86_64/sclo
+2.5G | /opt/mirror/upstream/centos/7/x86_64/updates
+--- | ---
+29G | /opt/mirror/upstream/centos/7/x86_64
+
 ### Examples
 #### HTTPS with Authentication
 /etc/upstream_sync/auth.conf
