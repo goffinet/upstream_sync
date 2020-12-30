@@ -73,12 +73,10 @@ url = http://ftp.belnet.be/mirror/ftp.centos.org/7/storage/x86_64/samba-411/
 path = centos/7/x86_64/samba-411
 createrepo = true
 
-# +3500 package at medium speed, more specific choices
-# http://remi.mirrors.cu.be/enterprise/7/
-#[remi-7-x86_64]
-#url = http://remi.mirrors.cu.be/enterprise/7/remi/x86_64/
-#path = centos/7/x86_64/remi
-#createrepo = true
+[remi-php72-7-x86_64]
+url = http://remi.mirrors.cu.be/enterprise/7/php72/x86_64/
+path = centos/7/x86_64/remi-php72
+createrepo = true
 
 # Set your mariadb version
 # See http://yum.mariadb.org
