@@ -66,6 +66,11 @@ createrepo = true
 #path = centos/7/x86_64/remi
 #createrepo = true
 
+[remi-php72-7-x86_64]
+url = http://remi.mirrors.cu.be/enterprise/7/php72/x86_64/
+path = centos/7/x86_64/remi-php72
+createrepo = true
+
 # Set your mariadb version
 # See http://yum.mariadb.org
 [mariadb-10.5-centos7-x86_64]
@@ -79,3 +84,12 @@ url = https://download.docker.com/linux/centos/7/x86_64/stable/
 path = centos/7/x86_64/docker-ce-stable
 createrepo = true
 EOF
+# 4. Get the upstream_sync script
+git clone https://github.com/goffinet/upstream_sync ~/upstream_sync
+# 5. Fix the MIRROR_DIR env var
+export MIRROR_DIR="${destination_path}"
+# 6. Install the script
+cp ~/upstream_sync/upstream_sync.py ${executable_destination}
+chmod +x ${executable_destination}/upstream_sync.py
+# 7. Execute the script (with privileges)
+upstream_sync.py --root -v
